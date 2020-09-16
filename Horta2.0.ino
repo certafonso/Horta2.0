@@ -1,69 +1,55 @@
-#define day 10000
-#define potPin A0 // analog pin used to connect the potentiometer
-#define valvePin 2
-#define delaytime 1000
+#define moistPin A0         // analog pin used to connect the moist sensor
+#define lightPin A1         // analog pin used to connect the photoresistor
+#define valvePin 2          // digital pin used to connect the valve
 
-int threshold = 900;
-unsigned int time_calibration = 0;
-unsigned long next_reading = 0;
+#define moistLevel 900     // moisture level to open the valve      (NEED TO ADJUST)
+#define lightLevel 200     // light level for it to take readings   (NEED TO ADJUST)
+
+#define delaytime 1000      // delay between cicles (ms)
+
 boolean valve_state = false;
-
 
 void setup() {
   int i = 1;
   
-  pinMode(potPin, INPUT);
+  // configure pins
+  pinMode(moistPin, INPUT);
+  pinMode(lightPin, INPUT);
   pinMode(valvePin, OUTPUT);
-  Serial.begin(9600); // open a serial connection to your computer
+  digitalWrite(valvePin, HIGH); // closes valve
 
-  // Serial.println("Waiting for time calibration:");
-
-  // while(i == 1){
-  //   Serial.print("available");
-  //   Serial.println(Serial.available());
-  //   while(Serial.available() > 0) {
-  //     time_calibration += (Serial.read() - '0') * i;
-  //     //i *= 10;
-  //     Serial.print("Read");
-  //     Serial.println(time_calibration);
-  //   }
-  // }
-
-  // Serial.println(time_calibration);
-
-  // delay(100);
+  Serial.begin(9600); // open a serial connection to your computer for debug purposes
 }
 
 void loop() {
-  unsigned long time = millis();
-  Serial.println(time);
+  int light = analogRead(lightPin);
 
-  if(time > next_reading){
+  Serial.print("light: ");
+  Serial.println(light);
+
+  if(light < lightLevel){ // is dark
     do{ // measures soil humidity until the valve is closed
       valve_state = TakeReading();
       delay(delaytime);
     }while(valve_state);
-
-    next_reading += day;  // next reading will happen in a day
-    Serial.println("next_reading");
-    Serial.println(next_reading);
   }
+
   delay(delaytime);
 }
 
 boolean TakeReading() 
 { // takes a reading of the sensor and turns the valve on or off
-  int reading;
+  int moist = analogRead(moistPin);
 
-  reading = analogRead(potPin);
-  Serial.println(reading);
+  Serial.print("moist: ");
+  Serial.println(moist);
 
-  if(reading > threshold){
-    digitalWrite(valvePin, HIGH);
+  if(moist > moistLevel){
+    digitalWrite(valvePin, HIGH); // closes valve
     return false;
   }
   else{
-    digitalWrite(valvePin, LOW);
+    digitalWrite(valvePin, LOW);  // opens valve
     return true;
   }
 }
